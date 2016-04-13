@@ -11,6 +11,9 @@
 
 <div class="container" id="main">
     <div class="col-md-10 col-md-offset-1">
+        <c:if test="${not empty errorMessage}">
+            <div class="alert alert-danger" role="alert">${errorMessage}</div>
+        </c:if>
         <div class="panel panel-default">
             <table class="table table-hover">
                 <thead>
@@ -25,7 +28,7 @@
                         <td>${user.userId}</td>
                         <td>${user.name}</td>
                         <td>${user.email}</td>
-                        <td><a href="/users/updateForm?userId=${user.userId}" class="btn btn-success" role="button">수정</a>
+                        <td><a href="/users/${user.userId}/edit" class="btn btn-success" role="button">수정</a>
                         </td>
                     </tr>
                 </c:forEach>

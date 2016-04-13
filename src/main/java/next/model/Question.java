@@ -4,17 +4,18 @@ import java.util.Date;
 
 public class Question {
 	private long questionId;
-	
 	private String writer;
-	
 	private String title;
-	
 	private String contents;
-	
 	private Date createdDate;
-	
-	private int countOfComment;
-	
+    private int countOfComment;
+
+	public Question() {
+		questionId = 0;
+		createdDate = new Date();
+		countOfComment = 0;
+    }
+
 	public Question(String writer, String title, String contents) {
 		this(0, writer, title, contents, new Date(), 0);
 	}	
@@ -29,34 +30,58 @@ public class Question {
 		this.countOfComment = countOfComment;
 	}
 
-	public long getQuestionId() {
-		return questionId;
-	}
-	
-	public String getWriter() {
-		return writer;
-	}
+    public int getCountOfComment() {
+        return countOfComment;
+    }
 
-	public String getTitle() {
-		return title;
-	}
+    public void setCountOfComment(int countOfComment) {
+        this.countOfComment = countOfComment;
+    }
 
-	public String getContents() {
-		return contents;
-	}
+    public long getQuestionId() {
+        return questionId;
+    }
 
-	public Date getCreatedDate() {
-		return createdDate;
-	}
-	
+    public void setQuestionId(long questionId) {
+        this.questionId = questionId;
+    }
+
+    public String getWriter() {
+        return writer;
+    }
+
+    public void setWriter(String writer) {
+        this.writer = writer;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public String getContents() {
+        return contents;
+    }
+
+    public void setContents(String contents) {
+        this.contents = contents;
+    }
+
+    public Date getCreatedDate() {
+        return createdDate;
+    }
+
 	public long getTimeFromCreateDate() {
 		return this.createdDate.getTime();
 	}
 
-	public int getCountOfComment() {
-		return countOfComment;
-	}
-	
+    public void setCreatedDate(Date createdDate) {
+        this.createdDate = createdDate;
+    }
+
 	public boolean isSameUser(User user) {
 		return user.isSameUser(this.writer);
 	}

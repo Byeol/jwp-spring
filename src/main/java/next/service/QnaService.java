@@ -1,30 +1,24 @@
 package next.service;
 
-import java.util.List;
-
 import next.CannotDeleteException;
 import next.dao.AnswerDao;
 import next.dao.QuestionDao;
 import next.model.Answer;
 import next.model.Question;
 import next.model.User;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
+import java.util.List;
+
+@Service
 public class QnaService {
-	private static QnaService qnaService;
+    @Autowired
+    private QuestionDao questionDao;
 
-	private QuestionDao questionDao = QuestionDao.getInstance();
-	private AnswerDao answerDao = AnswerDao.getInstance();
+    @Autowired
+	private AnswerDao answerDao;
 
-	
-	private QnaService() {}
-	
-	public static QnaService getInstance() {
-		if (qnaService == null) {
-			qnaService = new QnaService();
-		}
-		return qnaService;
-	}
-	
 	public Question findById(long questionId) {
 		return questionDao.findById(questionId);
 	}
@@ -32,7 +26,7 @@ public class QnaService {
 	public List<Answer> findAllByQuestionId(long questionId) {
 		return answerDao.findAllByQuestionId(questionId);
 	}
-	
+
     public void deleteQuestion(long questionId, User user) throws CannotDeleteException {
         Question question = questionDao.findById(questionId);
         if (question == null) {
@@ -63,5 +57,18 @@ public class QnaService {
         }
         
         questionDao.delete(questionId);
+    }
+
+    public void deleteAnswer(long answerId, User user) throws CannotDeleteException {
+        Answer answer = answerDao.findById(answerId);
+        if (answer == null) {
+            throw new CannotDeleteException("존재하지 않는 답변입니다.");
+        }
+
+        if (!answer.isSameUser(user)) {
+            throw new CannotDeleteException("다른 사용자가 쓴 답변을 삭제할 수 없습니다.");
+        }
+
+        answerDao.delete(answerId);
     }
 }
