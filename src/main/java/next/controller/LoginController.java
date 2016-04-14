@@ -7,12 +7,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-
-import javax.servlet.http.HttpSession;
+import org.springframework.web.context.request.NativeWebRequest;
+import org.springframework.web.context.request.WebRequest;
 
 @Controller
 @RequestMapping("/users")
 public class LoginController {
+    public static final String USER_SESSION_KEY = "user";
+
     @Autowired
     private UserDao userDao;
 
@@ -22,7 +24,7 @@ public class LoginController {
     }
 
     @RequestMapping(value = "/login", method = RequestMethod.POST)
-    public String login(@RequestParam String userId, @RequestParam String password, HttpSession session) {
+    public String login(@RequestParam String userId, @RequestParam String password, NativeWebRequest webRequest) {
         User user = userDao.findByUserId(userId);
 
         if (user == null) {
@@ -30,7 +32,7 @@ public class LoginController {
         }
 
         if (user.matchPassword(password)) {
-            session.setAttribute("user", user);
+            webRequest.setAttribute(USER_SESSION_KEY, user, WebRequest.SCOPE_SESSION);
             return "redirect:/";
         } else {
             throw new IllegalStateException("비밀번호가 틀립니다.");
@@ -38,8 +40,8 @@ public class LoginController {
     }
 
     @RequestMapping(value = "/logout", method = RequestMethod.GET)
-    public String logout(HttpSession httpSession) {
-        httpSession.removeAttribute("user");
+    public String logout(NativeWebRequest webRequest) {
+        webRequest.removeAttribute(USER_SESSION_KEY, WebRequest.SCOPE_SESSION);
         return "redirect:/";
     }
 
