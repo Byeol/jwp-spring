@@ -1,6 +1,7 @@
 package next.controller;
 
 import next.BadRequestException;
+import next.annotation.LoginUser;
 import next.dao.UserDao;
 import next.model.User;
 import org.slf4j.Logger;
@@ -11,8 +12,11 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.FlashMap;
+import org.springframework.web.servlet.support.RequestContextUtils;
+import org.springframework.web.servlet.view.RedirectView;
 
-import javax.servlet.http.HttpSession;
+import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 import java.sql.SQLException;
 
@@ -25,8 +29,8 @@ public class UsersController {
     private UserDao userDao;
 
     @RequestMapping(method = RequestMethod.GET)
-    public String index(HttpSession httpSession, Model model) throws SQLException {
-        if (!UserSessionUtils.isLogined(httpSession)) {
+    public String index(@LoginUser User loginUser, Model model) throws SQLException {
+        if (loginUser.isGuestUser()) {
             return "redirect:/users/login";
         }
 
@@ -58,10 +62,10 @@ public class UsersController {
     }
 
     @RequestMapping(value = "/{userId}/edit", method = RequestMethod.GET)
-    public String edit(@PathVariable String userId, HttpSession httpSession, Model model) {
+    public String edit(@PathVariable String userId, @LoginUser User loginUser, Model model) {
         User user = userDao.findByUserId(userId);
 
-        if (!UserSessionUtils.isSameUser(httpSession, user)) {
+        if (!loginUser.isSameUser(user)) {
             throw new IllegalStateException("다른 사용자의 정보를 수정할 수 없습니다.");
         }
 
@@ -70,10 +74,10 @@ public class UsersController {
     }
 
     @RequestMapping(value = "/{userId}", method = RequestMethod.PUT)
-    public String update(@PathVariable String userId, @ModelAttribute User updateUser, HttpSession httpSession) {
+    public String update(@PathVariable String userId, @LoginUser User loginUser, @ModelAttribute User updateUser) {
         User user = userDao.findByUserId(userId);
 
-        if (!UserSessionUtils.isSameUser(httpSession, user)) {
+        if (!loginUser.isSameUser(user)) {
             throw new IllegalStateException("다른 사용자의 정보를 수정할 수 없습니다.");
         }
 
@@ -92,8 +96,11 @@ public class UsersController {
 
     @ResponseStatus(HttpStatus.FORBIDDEN)
     @ExceptionHandler(IllegalStateException.class)
-    public String forbidden(HttpSession httpSession, Model model, Exception exception) throws SQLException {
-        model.addAttribute("errorMessage", exception.getMessage());
-        return index(httpSession, model);
+    public RedirectView forbidden(HttpServletRequest request, Exception exception) throws SQLException {
+        RedirectView rw = new RedirectView("/users");
+        rw.setStatusCode(HttpStatus.TEMPORARY_REDIRECT);
+        FlashMap outputFlashMap = RequestContextUtils.getOutputFlashMap(request);
+        outputFlashMap.put("errorMessage", exception.getLocalizedMessage());
+        return rw;
     }
 }

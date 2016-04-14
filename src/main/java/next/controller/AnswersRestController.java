@@ -1,6 +1,7 @@
 package next.controller;
 
 import next.CannotDeleteException;
+import next.annotation.LoginUser;
 import next.dao.AnswerDao;
 import next.dao.QuestionDao;
 import next.model.Answer;
@@ -12,10 +13,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.http.HttpSession;
 import java.net.URI;
 
 @RestController
@@ -33,13 +32,12 @@ public class AnswersRestController {
     private QnaService qnaService;
 
     @RequestMapping(method = RequestMethod.POST)
-    public ResponseEntity<Answer> create(@ModelAttribute Answer answer, HttpSession httpSession) {
-        if (!UserSessionUtils.isLogined(httpSession)) {
+    public ResponseEntity<Answer> create(@ModelAttribute Answer answer, @LoginUser User loginUser) {
+        if (loginUser.isGuestUser()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
         }
 
-        User user = UserSessionUtils.getUserFromSession(httpSession);
-        answer.setWriter(user.getUserId());
+        answer.setWriter(loginUser.getUserId());
         log.debug("answer : {}", answer);
 
         answer = answerDao.insert(answer);
@@ -50,15 +48,13 @@ public class AnswersRestController {
     }
 
     @RequestMapping(value = "/{answerId}", method = RequestMethod.DELETE)
-    public ResponseEntity destroy(@PathVariable long answerId, HttpSession httpSession, Model model) {
-        if (!UserSessionUtils.isLogined(httpSession)) {
+    public ResponseEntity destroy(@PathVariable long answerId, @LoginUser User loginUser) {
+        if (loginUser.isGuestUser()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        User user = UserSessionUtils.getUserFromSession(httpSession);
-
         try {
-            qnaService.deleteAnswer(answerId, user);
+            qnaService.deleteAnswer(answerId, loginUser);
             return ResponseEntity.noContent().build();
         } catch (CannotDeleteException e) {
             return ResponseEntity.badRequest().body(Result.fail(e.getLocalizedMessage()));

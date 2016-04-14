@@ -1,6 +1,7 @@
 package next.controller;
 
 import next.CannotDeleteException;
+import next.annotation.LoginUser;
 import next.dao.QuestionDao;
 import next.model.Question;
 import next.model.Result;
@@ -14,7 +15,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.servlet.http.HttpSession;
 import java.util.List;
 
 @RestController
@@ -32,15 +32,13 @@ public class QuestionsRestController {
     }
 
     @RequestMapping(value = "/{questionId}", method = RequestMethod.DELETE)
-    public ResponseEntity destroy(@PathVariable long questionId, HttpSession httpSession) {
-        if (!UserSessionUtils.isLogined(httpSession)) {
+    public ResponseEntity destroy(@LoginUser User loginUser, @PathVariable long questionId) {
+        if (loginUser.isGuestUser()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        User user = UserSessionUtils.getUserFromSession(httpSession);
-
         try {
-            qnaService.deleteQuestion(questionId, user);
+            qnaService.deleteQuestion(questionId, loginUser);
             return ResponseEntity.noContent().build();
         } catch (CannotDeleteException e) {
             return ResponseEntity.badRequest().body(Result.fail(e.getLocalizedMessage()));

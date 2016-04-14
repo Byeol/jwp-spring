@@ -71,13 +71,17 @@ public class User {
         
         return this.password.equals(password);
     }
-    
+
+	public boolean isGuestUser() {
+		return this.userId == null;
+	}
+
 	public boolean isSameUser(User user) {
 		return isSameUser(user.getUserId());
 	}
 	
 	public boolean isSameUser(String newUserId) {
-		return userId.equals(newUserId);
+		return !isGuestUser() && userId.equals(newUserId);
 	}
 
 	@Override

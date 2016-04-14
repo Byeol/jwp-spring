@@ -1,6 +1,7 @@
 package next.controller;
 
 import next.CannotDeleteException;
+import next.annotation.LoginUser;
 import next.dao.AnswerDao;
 import next.dao.QuestionDao;
 import next.model.Answer;
@@ -18,7 +19,6 @@ import org.springframework.web.servlet.support.RequestContextUtils;
 import org.springframework.web.servlet.view.RedirectView;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
 import java.sql.SQLException;
 import java.util.List;
 
@@ -40,21 +40,20 @@ public class QuestionsController {
     }
 
     @RequestMapping(value = "/new", method = RequestMethod.GET)
-    public String form(HttpSession httpSession) {
-        if (!UserSessionUtils.isLogined(httpSession)) {
+    public String form(@LoginUser User loginUser) {
+        if (loginUser.isGuestUser()) {
             return "redirect:/users/login";
         }
         return "qna/form";
     }
 
     @RequestMapping(method = RequestMethod.POST)
-    public String create(@ModelAttribute Question question, HttpSession httpSession) {
-        if (!UserSessionUtils.isLogined(httpSession)) {
+    public String create(@LoginUser User loginUser, @ModelAttribute Question question) {
+        if (loginUser.isGuestUser()) {
             return "redirect:/users/login";
         }
 
-        User user = UserSessionUtils.getUserFromSession(httpSession);
-        question.setWriter(user.getUserId());
+        question.setWriter(loginUser.getUserId());
         questionDao.insert(question);
         return "redirect:/";
     }
@@ -70,14 +69,13 @@ public class QuestionsController {
     }
 
     @RequestMapping(value = "/{questionId}/edit", method = RequestMethod.GET)
-    public String edit(@PathVariable long questionId, HttpSession httpSession, Model model) {
-        if (!UserSessionUtils.isLogined(httpSession)) {
+    public String edit(@PathVariable long questionId, @LoginUser User loginUser, Model model) {
+        if (loginUser.isGuestUser()) {
             return "redirect:/users/login";
         }
 
-        User user = UserSessionUtils.getUserFromSession(httpSession);
         Question question = questionDao.findById(questionId);
-        if (!question.isSameUser(user)) {
+        if (!question.isSameUser(loginUser)) {
             throw new IllegalStateException("다른 사용자가 쓴 글을 수정할 수 없습니다.");
         }
 
@@ -86,14 +84,13 @@ public class QuestionsController {
     }
 
     @RequestMapping(value = "/{questionId}", method = RequestMethod.PUT)
-    public String update(@PathVariable long questionId, @ModelAttribute Question newQuestion, HttpSession httpSession) {
-        if (!UserSessionUtils.isLogined(httpSession)) {
+    public String update(@PathVariable long questionId, @LoginUser User loginUser, @ModelAttribute Question newQuestion) {
+        if (loginUser.isGuestUser()) {
             return "redirect:/users/login";
         }
 
-        User user = UserSessionUtils.getUserFromSession(httpSession);
         Question question = questionDao.findById(questionId);
-        if (!question.isSameUser(user)) {
+        if (!question.isSameUser(loginUser)) {
             throw new IllegalStateException("다른 사용자가 쓴 글을 수정할 수 없습니다.");
         }
 
@@ -103,14 +100,13 @@ public class QuestionsController {
     }
 
     @RequestMapping(value = "/{questionId}", method = RequestMethod.DELETE)
-    public String destroy(@PathVariable long questionId, HttpSession httpSession, RedirectAttributes redirectAttrs) {
-        if (!UserSessionUtils.isLogined(httpSession)) {
+    public String destroy(@PathVariable long questionId, @LoginUser User loginUser, RedirectAttributes redirectAttrs) {
+        if (loginUser.isGuestUser()) {
             return "redirect:/users/login";
         }
 
-        User user = UserSessionUtils.getUserFromSession(httpSession);
         try {
-            qnaService.deleteQuestion(questionId, user);
+            qnaService.deleteQuestion(questionId, loginUser);
             return "redirect:/";
         } catch (CannotDeleteException e) {
             redirectAttrs.addFlashAttribute("errorMessage", e.getLocalizedMessage());
